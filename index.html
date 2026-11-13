@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Traversal Concept · Gaurav Basantani</title>
+<meta name="description" content="Check a memory before Traversal keeps it: a teammate asks Traversal to remember an old runbook line, 'replication-lag alerts are noise'. The memory card checks it against the alert's last 30 days, where 2 of 9 fires were real. A screen in the style of the Traversal session view. An unofficial concept by Gaurav Basantani.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* One screen, one moment: an on-call lead opens a Traversal session where a teammate asked it to
+   remember a line from an old runbook. Traversal drafted the memory and waits for a person to
+   Approve or Reject it (as its docs say). The concept adds one thing to the memory card: a check of
+   the memory against the alert's own last 30 days, so the reviewer sees the 2 fires it would call noise. */
+:root{
+  --bg:#f5f5f4; --page-ink:#0a0a0a; --page-muted:#5f6066; --page-line:#dededc;
+  --accent:#08863f; --ok:#08863f; --bad:#c11f02;
+  /* the app window stays light in both page modes */
+  --w-bg:#ffffff; --w-2:#fbfbfb; --w-3:#f2f2f1; --w-line:#e5e5e5; --w-ink:#1e1e1e; --w-muted:#6b6b70; --w-dim:#a3a3a8;
+  --red:#c11f02; --red-soft:#fbeae7; --red-line:#f0b9ae;
+  --amber:#8a5a04; --amber-soft:#f8efd9; --amber-line:#e6cf98;
+  --green:#08863f;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"Geist Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b0b0c; --page-ink:#f2f2f3; --page-muted:#a4a5ac; --page-line:#27282c;
+  --accent:#5fd391; --ok:#5fd391; --bad:#ff8a73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b0b0c; --page-ink:#f2f2f3; --page-muted:#a4a5ac; --page-line:#27282c;
+  --accent:#5fd391; --ok:#5fd391; --bad:#ff8a73; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--page-ink);font:15px/1.45 var(--sans);padding:20px max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px))}
+p,h1,h2,h3,ul,ol{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+.page{max-width:1180px;margin:0 auto;display:grid;gap:14px}
+.head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:12px 40px;align-items:end}
+h1{font:650 clamp(1.55rem,3.2vw,2.15rem)/1.08 var(--sans);letter-spacing:-.025em}
+.sub{color:var(--page-muted);font-size:.98rem;margin-top:6px;max-width:62ch}
+.by{color:var(--page-muted);font-size:.84rem;margin-top:4px}
+.now{border-left:3px solid var(--page-line);padding:2px 0 2px 13px;display:grid;gap:3px}
+.now.bad{border-color:var(--bad)}
+.now.ok{border-color:var(--ok)}
+.now b{font-weight:600}
+.now.bad b{color:var(--bad)}
+.now.ok b{color:var(--ok)}
+.now span{color:var(--page-muted);font-size:.93rem}
+/* the app window */
+.window{background:var(--w-bg);color:var(--w-ink);border:1px solid var(--w-line);border-radius:10px;overflow:hidden;color-scheme:light}
+.app{display:grid;grid-template-columns:52px minmax(0,1fr)}
+.rail{background:var(--w-2);border-right:1px solid var(--w-line);display:grid;align-content:start;justify-items:center;gap:14px;padding:14px 0;cursor:default}
+.rail i{display:block;width:16px;height:16px;border-radius:4px;border:1.5px solid #cfcfcf}
+.rail i.logo{border:0;background:#cfe9d9;width:20px;height:14px;border-radius:7px 7px 3px 3px}
+.col{min-width:0;display:grid;grid-template-rows:auto 1fr}
+.bar{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--w-line);font-size:.86rem;color:var(--w-muted);min-width:0;cursor:default}
+.bar .path{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .path b{color:var(--w-ink);font-weight:600}
+.bar .who{margin-left:auto;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.av{width:22px;height:22px;border-radius:50%;background:var(--w-3);display:inline-grid;place-items:center;font:600 .6rem var(--sans);font-style:normal;color:var(--w-muted);flex:none}
+.main{padding:14px 20px 16px;display:grid;gap:10px;align-content:start;min-width:0;max-width:820px;width:100%;margin:0 auto}
+.main>*{min-width:0}
+.msg{justify-self:end;max-width:88%;background:var(--w-3);border-radius:10px;padding:8px 12px;font-size:.9rem;display:grid;gap:2px}
+.msg small{font-size:.74rem;color:var(--w-muted)}
+.earlier{font-size:.78rem;color:var(--w-muted);border-bottom:1px dashed var(--w-line);padding-bottom:6px}
+.tv{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--w-muted)}
+.tv i{display:inline-block;width:16px;height:11px;border-radius:6px 6px 2px 2px;background:#cfe9d9}
+.ans{font-size:.9rem}
+.ans b{font-weight:600}
+.code{font:500 .82rem var(--mono)}
+/* memory card, shaped like the real proposal card */
+.card{border:1px solid var(--w-line);border-radius:10px;padding:11px 13px;display:grid;gap:8px}
+.card.small{padding:7px 12px;gap:2px}
+.ctop{display:flex;align-items:flex-start;gap:10px}
+.md{width:30px;height:30px;border-radius:7px;background:var(--w-3);display:grid;place-items:center;font:700 .62rem var(--mono);color:#3b82f6;flex:none}
+.ct{min-width:0;flex:1}
+.crumb{font-size:.74rem;color:var(--w-muted)}
+.fname{font:600 .98rem var(--sans);letter-spacing:-.01em;overflow-wrap:anywhere}
+.state{font:500 .72rem var(--sans);border:1px solid #d4d4d2;background:var(--w-3);color:var(--w-ink);border-radius:4px;padding:1px 7px;white-space:nowrap}
+.mem{font-size:.86rem;color:#3a3a3e}
+.orig{font-size:.78rem;color:var(--w-muted)}
+.chk{border-top:1px solid var(--w-line);padding-top:8px;display:grid;gap:6px}
+.chk h3{font:600 .8rem var(--sans)}
+.chk h3 span{font-weight:400;color:var(--w-muted)}
+.lag{font-size:.74rem;color:var(--w-muted)}
+.fires{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px}
+.f{border:1px solid var(--w-line);border-radius:6px;padding:4px 6px;font-size:.74rem;line-height:1.25;background:var(--w-bg)}
+.f b{display:block;font:600 .8rem var(--sans);color:var(--w-ink)}
+.f span{color:var(--w-muted)}
+.f.wrong{border-color:var(--red-line);background:var(--red-soft)}
+.f.wrong span{color:var(--red);font-weight:500}
+.f.over{border-color:var(--amber-line);background:var(--amber-soft)}
+.f.over span{color:var(--amber);font-weight:500}
+.f i,.chk i,.lag i{font-style:normal}
+.f em{font-style:normal;display:block;font:500 .66rem var(--mono);color:var(--w-muted)}
+.why{font-size:.82rem;color:#3d3f45;border-left:2px solid var(--w-line);padding-left:9px}
+.why b{color:var(--w-ink);font-weight:600}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:500 .86rem var(--sans);border-radius:7px;padding:6px 14px;border:1px solid #d0d0ce;background:var(--w-bg);color:var(--w-ink);min-height:36px}
+.btn.primary{background:#111;border-color:#111;color:#fff}
+.btn.text{border-color:transparent;background:transparent}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.wf button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.hint{font-size:.76rem;color:var(--w-muted)}
+.res{border-radius:8px;padding:10px 12px;display:grid;gap:6px;font-size:.86rem;border:1px solid var(--red-line);background:var(--red-soft)}
+.res h3{font:600 .92rem var(--sans);color:var(--red)}
+.res p{color:#4a3734}
+.draft{border:1px solid #d0d0ce;border-radius:8px;padding:10px 12px;display:grid;gap:7px;background:var(--w-2)}
+.draft label{font:500 .72rem var(--sans);color:var(--w-muted)}
+.draft textarea{font:400 .9rem/1.4 var(--sans);color:var(--w-ink);background:#fff;border:1px solid #d0d0ce;border-radius:6px;padding:8px 10px;resize:vertical;min-height:64px;width:100%}
+.draft textarea:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+.compose{border:1px solid var(--w-line);border-radius:12px;padding:8px 12px;font-size:.84rem;color:var(--w-dim);cursor:default}
+.only-s{display:none!important}
+.card.small .mem{text-decoration:line-through;text-decoration-color:var(--w-dim)}
+.wf{display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--w-line);font-size:.76rem;color:var(--w-dim);background:var(--w-2)}
+.wf span{flex:1;min-width:0}
+.wf button{border:1px solid #d0d0ce;background:var(--w-bg);color:var(--w-ink);border-radius:6px;padding:4px 11px;font-size:.78rem;font-weight:500;min-height:30px}
+.wf button:disabled{opacity:.4;cursor:default}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 18px;font-size:.78rem;color:var(--page-muted)}
+.foot a{color:var(--page-ink);text-decoration:none;border-bottom:1px solid var(--page-line)}
+@media(max-width:900px){.head{grid-template-columns:1fr;gap:10px}}
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  .rail{display:none}
+  .main{padding:12px 14px}
+  .fires{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  body{padding-top:12px;padding-bottom:18px;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))}
+  .page{gap:10px}
+  h1{font-size:1.4rem}
+  .sub{display:none}
+  .by{font-size:.74rem;margin-top:3px}
+  .now span{font-size:.84rem}
+  .now b{font-size:.93rem}
+  .bar{display:none}
+  .main{padding:9px 9px 10px;gap:7px}
+  .msg{font-size:.8rem;padding:6px 9px;max-width:94%}
+  .msg small{font-size:.68rem}
+  .tv{display:none}
+  .ans{font-size:.8rem}
+  .card{padding:8px 9px;gap:6px}
+  .md{display:none}
+  .fname{font-size:.86rem}
+  .mem{font-size:.78rem}
+  .orig{font-size:.7rem}
+  .chk{padding-top:6px;gap:4px}
+  .chk h3{font-size:.74rem}
+  .lag{font-size:.68rem}
+  .fires{gap:3px}
+  .f{padding:2px 4px;font-size:.66rem}
+  .f b{font-size:.72rem}
+  .f em{font-size:.58rem}
+  .why{font-size:.74rem}
+  .btns{flex-wrap:nowrap;gap:5px}
+  .btn{font-size:.8rem;padding:5px 11px;white-space:nowrap;min-height:36px}
+  .compose{display:none}
+  .res{font-size:.8rem;padding:8px 10px}
+  .draft{padding:8px 9px}
+  .draft textarea{font-size:16px;min-height:104px}
+  .only-s{display:flex!important}
+  p.only-s{display:block!important}
+  .hide-s{display:none!important}
+  .earlier{padding-bottom:4px}
+}
+@media(prefers-reduced-motion:no-preference){.res,.draft,.card.new{animation:in .16s ease-out both}@keyframes in{from{transform:translateY(3px);opacity:.6}}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div>
+      <h1>Check a memory before Traversal keeps it</h1>
+      <p class="sub">An on-call lead reviews one memory a teammate asked for, in a screen shaped like a Traversal session.</p>
+      <p class="by">Design concept for Traversal · unofficial · made-up company</p>
+    </div>
+    <div class="now" id="now" aria-live="polite"></div>
+  </header>
+
+  <section class="window" aria-label="Traversal session with one memory to review, concept">
+    <div class="app">
+      <div class="rail" aria-hidden="true"><i class="logo"></i><i></i><i></i><i></i><i></i></div>
+      <div class="col">
+        <div class="bar"><span class="path">[Made-up] Pantrybox › <b>Orders on-call</b></span><span class="who"><i class="av">MQ</i><span>Marisol Quint, on-call lead</span></span></div>
+        <div class="main" id="main"></div>
+      </div>
+    </div>
+    <div class="wf"><span>Made-up company, people and alerts</span><button type="button" id="undo">Undo</button><button type="button" id="reset">Start over</button></div>
+  </section>
+
+  <footer class="foot"><span>By Gaurav Basantani · <a href="https://gauravbasantani.com">gauravbasantani.com</a> · <a href="walkthrough.mp4">Watch a 43-second walkthrough</a></span><span>Not affiliated with Traversal. Memory review as described in Traversal’s public docs.</span></footer>
+</div>
+
+<script>
+(function(){
+  /* The alert's last 30 days, oldest first: how long each fire lasted (minutes), and the ticket or
+     incident linked to it, if any. Lag = how far the read copy of orders-db is behind the main database. */
+  var FIRES=[{m:2},{m:3},{m:2},{m:14,link:"OPS-318",what:"replica disk full"},{m:1},{m:4},{m:22,link:"INC-2207",what:"checkout showed old order status"},{m:2},{m:3}];
+  /* A fire with a linked ticket or incident was real; the rest cleared on their own with nothing linked. */
+  function realFire(f){return !!f.link}
+  var SHORT_MAX=Math.max.apply(null,FIRES.filter(function(f){return !realFire(f)}).map(function(f){return f.m}));
+  var REAL=FIRES.filter(realFire), NOISE=FIRES.filter(function(f){return !realFire(f)});
+  var FILE="orders-db-replication-lag.md";
+  var REQ="Theo Lindqvist", ME="Marisol Quint";
+  function e(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function list(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" and "+a[a.length-1]}
+
+  /* a memory is either "all" (every fire is noise) or {n}: fires that clear within n minutes are noise */
+  function call(mem,f){return mem.all?"noise":(f.m<=mem.n?"noise":"real")}
+  function memText(mem){
+    if(mem.all) return "Treat every OrdersDbReplicationLag alert on orders-db as noise. The replica always catches up on its own.";
+    return "OrdersDbReplicationLag alerts on orders-db that clear within "+mem.n+" min are noise. Lag that lasts longer than "+mem.n+" min is real.";
+  }
+  function misses(mem){return FIRES.filter(function(f){return realFire(f)&&call(mem,f)==="noise"})}   /* real fires called noise */
+  function over(mem){return FIRES.filter(function(f){return !realFire(f)&&call(mem,f)==="real"})}     /* noise called real */
+  function suggested(){
+    return "Not all noise: "+REAL.length+" of "+FIRES.length+" fires lasted "+list(REAL.map(function(f){return f.m}))+" min, and "+list(REAL.map(function(f){return f.link}))+" are linked to them. Remember only that lag alerts that clear within 5 min are noise.";
+  }
+  function parseN(t){var m=/within\s+(\d{1,3})\s*min/i.exec(t||"");if(!m)return null;var n=+m[1];return n>=1&&n<=120?n:null}
+
+  /* s: "open" draft 1 waiting; "acc1" draft 1 approved (the wrong answer); "rej" rejected, no new draft;
+     "open2" draft 2 waiting; "acc2" draft 2 approved */
+  function fresh(){return {s:"open",rejecting:false,reason:"",reply:"",mem2:null,undone:false}}
+  var st=fresh(), hist=[];
+  function snap(){hist.push(JSON.stringify(st))}
+
+  function fires(mem){
+    return '<div class="fires">'+FIRES.map(function(f){
+      var c=call(mem,f), cls="";
+      if(realFire(f)&&c==="noise") cls=" wrong"; else if(!realFire(f)&&c==="real") cls=" over";
+      return '<div class="f'+cls+'"><b>'+f.m+' min</b><span>'+(cls===" wrong"?'<i class="hide-s">called </i>noise':c)+'</span>'+(f.link?'<em>'+f.link+'</em>':'')+'</div>';
+    }).join("")+'</div>';
+  }
+  function why(mem){
+    var mi=misses(mem), ov=over(mem);
+    if(mem.all) return '<p class="why"><b>Not all noise.</b> '+NOISE.length+' of '+FIRES.length+' fires cleared on their own within '+SHORT_MAX+' min, with nothing linked. The other '+REAL.length+' lasted '+list(REAL.map(function(f){return f.m}))+' min, and each is linked: '+list(REAL.map(function(f){return f.link+' ('+f.what+')'}))+'.</p>';
+    if(!mi.length&&!ov.length) return '<p class="why"><b>Matches all '+FIRES.length+'.</b> The '+NOISE.length+' fires that cleared within '+SHORT_MAX+' min are noise; the '+list(REAL.map(function(f){return f.m+"-min"}))+' fires stay real.</p>';
+    if(mi.length) return '<p class="why"><b>Still calls '+(mi.length===1?"a real fire":mi.length+" real fires")+' noise.</b> The '+list(mi.map(function(f){return f.m+"-min"}))+' fire'+(mi.length>1?"s were":" was")+' real ('+list(mi.map(function(f){return f.link}))+'), but '+(mi.length>1?"they end":"it ends")+' within '+mem.n+' min, so this memory calls '+(mi.length>1?"them":"it")+' noise.</p>';
+    return '<p class="why"><b>Calls '+ov.length+' short fire'+(ov.length>1?"s":"")+' real.</b> '+(ov.length>1?"They":"It")+' cleared on '+(ov.length>1?"their":"its")+' own within '+SHORT_MAX+' min, so on-call would keep checking '+(ov.length>1?"them":"it")+' for nothing.</p>';
+  }
+  function card(mem,stateLabel,isNew){
+    var h='<div class="card'+(isNew?' new':'')+'"><div class="ctop"><span class="md" aria-hidden="true">M↓</span><div class="ct"><div class="crumb">Memories /</div><div class="fname">'+FILE+'</div></div>'+(stateLabel?'<span class="state">'+stateLabel+'</span>':'')+'</div>';
+    h+='<p class="mem">'+e(memText(mem))+'</p>';
+    h+='<div class="chk"><h3>Checked against this alert’s last 30 days <span>· '+FIRES.length+' fires<i class="hide-s">, oldest first</i></span></h3><p class="lag">Each box: how long one fire lasted<i class="hide-s">, and what this memory calls it</i>. Lag = how far the read copy of orders-db is behind.</p>'+fires(mem)+'</div>';
+    return h;
+  }
+  function smallCard(label){
+    return '<div class="card small"><div class="ctop"><div class="ct"><div class="crumb">Memories /</div><div class="fname">'+FILE+'</div></div><span class="state">'+label+'</span></div><p class="mem">'+e(memText({all:true}))+'</p></div>';
+  }
+  function decide(mem){
+    var h='';
+    if(st.rejecting){
+      h+='<div class="draft"><label for="rs">Why reject it? Your reason is posted as a reply, so Traversal can draft a narrower memory.</label><textarea id="rs" rows="3">'+e(st.reason)+'</textarea><span class="hint">Suggested from the check above. Edit it if you like.</span><div class="btns"><button type="button" class="btn primary" data-post="1"'+(st.reason.trim()?'':' disabled')+'>Reject and reply</button><button type="button" class="btn" data-cancel="1">Cancel</button></div></div>';
+    } else {
+      h+='<div class="btns"><button type="button" class="btn" data-acc="1">Approve</button><button type="button" class="btn text" data-rej="1">Reject</button></div>';
+    }
+    return h;
+  }
+  function main(){
+    var h='';
+    var first='<div class="msg"><small>'+REQ+' · in Slack</small>@Traversal remember what our 2024 runbook says about lag alerts on orders-db.</div>';
+    if(st.s==="open"||st.s==="acc1"){
+      h+=first+'<div class="tv"><i></i>Traversal</div><p class="ans">Drafted the memory from the runbook line Theo pointed to. It needs a person’s approval before it’s kept.</p>';
+      h+=card({all:true},st.s==="acc1"?"Approved":"",false);
+      if(st.s==="open"){h+=why({all:true})+decide({all:true})+'</div>'}
+      else{h+='</div><div class="res"><h3>Kept: every lag alert is noise, even the linked ones</h3><p>Approve files it into Memories, where future investigations can use it. Undo takes it back out.</p><div class="btns"><button type="button" class="btn primary" data-undo="1">Undo</button></div></div>'}
+    } else {
+      h+='<p class="earlier hide-s">Earlier: '+REQ+' asked Traversal to remember the 2024 runbook line.</p>';
+      h+='<p class="earlier only-s">Earlier: you rejected the 2024 runbook line '+REQ.split(" ")[0]+' asked for, with a reason.</p>';
+      h+='<div class="hide-s">'+smallCard("Rejected")+'</div>';
+      h+='<div class="msg hide-s"><small>'+ME+'</small>'+e(st.reply)+'</div><div class="tv"><i></i>Traversal</div>';
+      if(st.s==="rej"){h+='<p class="ans">Rejected. Nothing was kept.</p>'}
+      else{
+        h+='<p class="ans">Drafted a narrower memory from your reply (“within '+st.mem2.n+' min”).</p>';
+        h+=card(st.mem2,st.s==="acc2"?"Approved":"",true);
+        if(st.s==="open2"){h+=why(st.mem2)+decide(st.mem2)+'</div>'}
+        else{
+          h+='</div>';
+          var mi=misses(st.mem2);
+          if(mi.length) h+='<div class="res"><h3>Kept: the '+list(mi.map(function(f){return f.m+"-min"}))+' fire counts as noise</h3><p>The check showed it was real. Undo takes the memory back out.</p><div class="btns"><button type="button" class="btn primary" data-undo="1">Undo</button></div></div>';
+        }
+      }
+    }
+    h+='<div class="compose" aria-hidden="true">Ask a follow-up…</div>';
+    h+='<div class="only-s" style="align-items:center;gap:6px;font-size:.72rem;color:var(--w-muted)"><i class="av">MQ</i>'+ME+', on-call lead · Pantrybox (made-up)</div>';
+    return h;
+  }
+  function narrate(){
+    var n=document.getElementById("now"), cls="", b, s;
+    if(st.s==="acc1"){cls="bad";b="Approved: the "+REAL.length+" linked fires now count as noise.";s="Undo, then reject it with a reason."}
+    else if(st.rejecting){b="Say why, so the next draft is narrower.";s="Your reason goes to Traversal as a reply in this session."}
+    else if(st.s==="rej"){b="Declined, with your reason on record.";s="Name a time, like “within 5 min”, and Traversal can draft a narrower memory. Undo to edit it."}
+    else if(st.s==="open2"){var m=misses(st.mem2),o=over(st.mem2);
+      if(m.length){cls="bad";b="The new draft still calls the "+list(m.map(function(f){return f.m+"-min"}))+" fire noise.";s="Undo and pick a shorter time."}
+      else if(o.length){b="The new draft calls "+o.length+" short fire"+(o.length>1?"s":"")+" real.";s="Safe, but noisy. Undo and pick a longer time, or approve it."}
+      else{cls="ok";b="The narrower draft matches all "+FIRES.length+" fires.";s="It’s still a draft. Approve when you’re ready."}}
+    else if(st.s==="acc2"){var m2=misses(st.mem2);
+      if(m2.length){cls="bad";b="Approved a memory that calls a real fire noise.";s="Undo, then pick a shorter time."}
+      else{cls="ok";b="Approved a memory that matches all "+FIRES.length+" fires.";s="Short lag stays quiet; long lag stays real."}}
+    else if(st.undone){cls="ok";b="Undone. The memory is back to a draft.";s="Reject it with a reason, or approve it."}
+    else{b="An old runbook line is about to become a memory.";s=REAL.length+" of its "+FIRES.length+" fires were real. Try approving it anyway."}
+    n.className="now "+cls; n.innerHTML='<b>'+e(b)+'</b><span>'+e(s)+'</span>';
+  }
+  var M=document.getElementById("main"), U=document.getElementById("undo");
+  function render(){M.innerHTML=main();U.disabled=!hist.length;narrate()}
+  M.addEventListener("input",function(ev){var t=ev.target;if(t.id==="rs"){st.reason=t.value;var p=M.querySelector("[data-post]");if(p)p.disabled=!t.value.trim()}});
+  function undo(){if(!hist.length)return;st=JSON.parse(hist.pop());st.undone=true;st.rejecting=false;render();scrollTo(0,0)}
+  document.addEventListener("click",function(ev){
+    var b=ev.target.closest("button"); if(!b||b.disabled)return;
+    var d=b.dataset;
+    if(b.id==="undo"||d.undo){undo();return}
+    if(b.id==="reset"){st=fresh();hist=[];render();scrollTo(0,0);return}
+    if(d.acc){snap();st.undone=false;st.s=(st.s==="open")?"acc1":"acc2"}
+    if(d.rej){st.rejecting=true;if(!st.reason)st.reason=suggested();render();var t=document.getElementById("rs");if(t){t.focus({preventScroll:true});t.setSelectionRange(t.value.length,t.value.length);t.closest(".draft").scrollIntoView({block:"nearest"})}return}
+    if(d.cancel){st.rejecting=false;render();return}
+    if(d.post){var v=(document.getElementById("rs").value||"").trim();if(!v){document.getElementById("rs").focus();return}
+      snap();st.undone=false;st.rejecting=false;st.reply=v;st.reason="";var n=parseN(v);
+      if(st.s==="open"){st.mem2=n?{n:n}:null;st.s=n?"open2":"rej"}
+      else{st.mem2=n?{n:n}:st.mem2;st.s=n?"open2":"rej"}
+      render();scrollTo(0,0);return}
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
