@@ -228,7 +228,7 @@ h1{font:650 clamp(1.55rem,3.2vw,2.15rem)/1.08 var(--sans);letter-spacing:-.025em
     return '<div class="fires">'+FIRES.map(function(f){
       var c=call(mem,f), cls="";
       if(realFire(f)&&c==="noise") cls=" wrong"; else if(!realFire(f)&&c==="real") cls=" over";
-      return '<div class="f'+cls+'"><b>'+f.m+' min</b><span>'+(cls===" wrong"?'<i class="hide-s">called </i>noise':c)+'</span>'+(f.link?'<em>'+f.link+'</em>':'')+'</div>';
+      return '<div class="f'+cls+'"><b>'+f.m+' min</b><span>'+(cls===" wrong"?'<i class="hide-s">was </i>real':c)+'</span>'+(f.link?'<em>'+f.link+'</em>':'')+'</div>';
     }).join("")+'</div>';
   }
   function why(mem){
